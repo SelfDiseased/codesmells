@@ -1,15 +1,34 @@
-void checkSecurity(String[] people) {
-  boolean found = false;
-  for (int i = 0; i < people.Length; i++) {
-    if (!found) {
-      if (people[i].Equals("Don")) {
-        sendAlert();
-        found = true;
-      }
-      if (people[i].Equals("John")) {
-        sendAlert();
-        found = true;
-      }
+class Animal
+{
+  public:
+    Animal() {}
+    ...
+};
+
+class Dog : public Animal
+{
+  public:
+    Dog(int age) : Animal()
+    {
+      m_age = age;
     }
-  }
-}
+
+    int GetAge() { return m_age; }
+    ...
+  private:
+    int m_age;
+};
+
+class Cat : public Animal
+{
+  public:
+    Cat (int age) : Animal()
+    {
+      m_age = age;
+    }
+
+    int GetAge() { return m_age; }
+    ...
+  private:
+    int m_age;
+};

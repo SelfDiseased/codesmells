@@ -1,202 +1,238 @@
 # codesmells
 
-### Завдання 1. Рефакторинг на рівні окремих операторів
-
-Наступна функція перевіряє, чи немає підозрілих осіб у списку осіб, імена яких були захаркоджені:
+### Завдання 1. Рішення задач узагальнення
 
 ```
-void checkSecurity(String[] people) {
-  boolean found = false;
-  for (int i = 0; i < people.Length; i++) {
-    if (!found) {
-      if (people[i].Equals("Don")) {
-        sendAlert();
-        found = true;
-      }
-      if (people[i].Equals("John")) {
-        sendAlert();
-        found = true;
-      }
-    }
-  }
-}
-```
-
-Помічені "запахи коду":
-
-```
-void checkSecurity(String[] people) {
-  boolean found = false;                          // забруднювач коду - мертва змінна
-  for (int i = 0; i < people.Length; i++) {       // роздувальщик коду, який робить метод більшим
-    if (!found) {
-      if (people[i].Equals("Don")) {
-        sendAlert();
-        found = true;
-      }
-      if (people[i].Equals("John")) {              // забруднювач коду - дублювання коду
-        sendAlert();
-        found = true;
-      }
-    }
-  }
-}
-```
-
-Рефакторинг:
-
-1. Видалення змінної found та заміна на return, оскільки при знаходженні захардкодженої людини викликається sendAlert і цикл завершується;
-2. Покращення циклу шляхом використання foreach;
-3. Прибрати дублювання коду, виносячи логіку перевірки хардкоду в окрему функцію.
-
-```
-void checkSecurityRefactored(string[] people) {
-  foreach (string person in people) {
-    if (isSuspiciousPerson(person)) {
-      sendAlert();
-      return;
-    }
-  }
-}
-
-bool isSuspiciousPerson(string person) {
-  string[] suspiciousPeople = { "Don", "John" };
-  return suspiciousPeople.Contains(person);
-}
-```
-
-### Завдання 2. Рефакторинг на рівні даних
-
-```
-enum TransportType {
-  eCar,
-  ePlane,
-  eSubmarine
+class Animal
+{
+  public:
+    Animal() {}
+    ...
 };
 
-class Transport {
+class Dog : public Animal
+{
   public:
-    Transport(TransportType type) : m_type (type) {}
-
-    int GetSpeed(int distance, int time) {
-    if (time != 0) {
-      switch(m_type) {
-        case eCar:
-            return distance/time;
-        case ePlane:
-            return distance/(time - getTakeOffTime() - getLandingTime());
-        case eSubmarine:
-            return distance/(time - getDiveTime() - getAscentTime());
-        }
-      }
+    Dog(int age) : Animal()
+    {
+      m_age = age;
     }
-  ...
+
+    int GetAge() { return m_age; }
+    ...
   private:
-    int m_takeOffTime;
-    int m_landingTime;
-    int m_diveTime;
-    int m_ascentTime;
-    enum m_type;
+    int m_age;
+};
+
+class Cat : public Animal
+{
+  public:
+    Cat (int age) : Animal()
+    {
+      m_age = age;
+    }
+
+    int GetAge() { return m_age; }
+    ...
+  private:
+    int m_age;
 };
 ```
 
 Помічені "запахи коду":
 
 ```
-num TransportType {
-  eCar,
-  ePlane,
-  eSubmarine
+class Animal                        // забруднювач коду - клас даних
+{
+  public:
+    Animal() {}
+    ...
 };
 
-class Transport {
+class Dog : public Animal           // роздувальщик - великий клас
+{
   public:
-    Transport(TransportType type) : m_type (type) {}
-
-    int GetSpeed(int distance, int time) {
-    if (time != 0) {
-      switch(m_type) {                                                      // порушник об*єктного дизайну - оператор switch
-        case eCar:
-            return distance/time;
-        case ePlane:
-            return distance/(time - getTakeOffTime() - getLandingTime());
-        case eSubmarine:
-            return distance/(time - getDiveTime() - getAscentTime());
-        }
-      }
+    Dog(int age) : Animal()
+    {
+      m_age = age;
     }
-  ...
+
+    int GetAge() { return m_age; }
+    ...
   private:
-    int m_takeOffTime;                                                      // відсутність методів доступу до приватних змінних, також
-    int m_landingTime;                                                      // порушники об*єктного дизайну - довгий список параметрів,
-    int m_diveTime;                                                         // які потрібно сетити через конструктор
-    int m_ascentTime;
-    enum m_type;
+    int m_age;
+};
+
+class Cat : public Animal
+{
+  public:
+    Cat (int age) : Animal()
+    {
+      m_age = age;
+    }
+
+    int GetAge() { return m_age; }  // забруднювач коду - дублювання коду
+    ...
+  private:
+    int m_age;
 };
 ```
 
 Рефакторинг:
 
-1. Наслідування елементів enum TransportType від класу Transport;
-2. Зміна логіки публічного методу;
-3. Заміна конструкції switch;
-4. Заміна кодування типу класом;
-5. Написання гетерів для доступу до приватних полів;
+1. Підйом приватного поля m_age
+2. Підйом гетера GetAge та конструктора
+3. Відокремлення інтерфейсу Alive
 
 ```
-class Transport {
-  public:
-    virtual const int GetSpeed(int distance, int time) = 0;
-};
+interface Alive
+{
+  int GetAge();
+}
 
-class Car : public Transport {
+class Animal : Alive
+{
   public:
-    override const int GetSpeed(int distance, int time) {
-      if (time == 0) {
-        return 0;
-      }
-      return distance / time;
-    }
-};
-
-class Plane : public Transport {
-  public:
-    Plane(int takeOffTime, int landingTime)
-      : m_takeOffTime(takeOffTime), m_landingTime(landingTime) {}
-
-    override const int GetSpeed(int distance, int time) {
-      if (time == 0) {
-        return 0;
-      }
-      time -= GetTakeOffTime() + GetLandingTime();
-      return distance / time;
+    Animal(int age)
+    {
+      m_age = age;
     }
 
-    const int GetTakeOffTime() { return m_takeOffTime; }
-    const int GetLandingTime() { return m_landingTime; }
+    int GetAge() { return m_age; }
 
   private:
-    int m_takeOffTime;
-    int m_landingTime;
+    int m_age;
 };
 
-class Submarine : public Transport {
+class Dog : public Animal
+{
   public:
-    Submarine(int diveTime, int ascentTime)
-      : m_diveTime(diveTime), m_ascentTime(ascentTime) {}
-
-    override const int GetSpeed(int distance, int time) {
-      if (time == 0) {
-        return 0;
-      }
-      return distance / (time - GetDiveTime() - GetAscentTime());
-    }
-
-    const int GetDiveTime() { return m_diveTime; }
-    const int GetAscentTime() { return m_ascentTime; }
-
-  private:
-    int m_diveTime;
-    int m_ascentTime;
+    Dog(int age) : base(age) {}
 };
 
+class Cat : public Animal
+{
+  public:
+    Cat(int age) : base(age) {}
+};
+```
+
+### Завдання 2. Рефакторинг на рівні окремих операторів
+
+```
+int getSpeed()
+{
+  int result = 0;
+  if (isTransport())
+  {
+    if(isCar)
+    {
+      result = getCarSpeed();
+    }
+    else
+    {
+      if(isPlane)
+      {
+        for (int i = 0; i <> m_planes.Length; i++)
+        {
+          result += getPlaneSpeed(m_planes[i]);
+        }
+        if (m_planes.Length <> 0)
+        {
+          result = result / m_planes.Length;
+        }
+      }
+      else
+      {
+        if(isBoat)
+        {
+          result = getBoatSpeed();
+        }
+      }
+    }
+  }
+  else
+  {
+    result = getManSpeed();
+  }
+  return result;
+}
+```
+
+Помічені "запахи коду":
+
+```
+int getSpeed()                                            // роздувальщик - довгий метод
+{
+  int result = 0;                                         // забруднювач коду - непотрібна змінна
+  if (isTransport())
+  {
+    if(isCar)
+    {
+      result = getCarSpeed();
+    }
+    else                                                  // роздувальщик коду - непотрібне обгортання в блок
+    {
+      if(isPlane)
+      {
+        for (int i = 0; i < m_planes.Length; i++)         // роздувальщик коду - довгий метод (як реалізація циклу, так і сам розрахунок швидкості літаків)
+        {
+          result += getPlaneSpeed(m_planes[i]);
+        }
+        if (m_planes.Length > 0)
+        {
+          result = result / m_planes.Length;
+        }
+      }
+      else                                                // роздувальщик коду - непотрібне обгортання в блок
+      {
+        if(isBoat)
+        {
+          result = getBoatSpeed();
+        }
+      }
+    }
+  }
+  else                                                    // роздувальщик коду - можна перемістити наверх й позбутися від великого блоку
+  {
+    result = getManSpeed();
+  }
+  return result;
+}
+```
+
+Рефакторинг:
+
+1. Позбуваємося від непотрібної змінної result, замість неї використовуємо return всередині кожної умови
+2. Переміщуємо перевірку !isTransport() наверх, щоб великий блок перевірки транспортів винести на верхній рівень
+3. Прибираємо непотрібні блоки else для літаків та човнів
+4. Помічаємо, що розрахунок середньої швидкості літака було заімплеменчено з використанням надто великої кількості коду
+5. Використовуємо оператор switch замість багатьох іфів задля більшої лаконічності
+
+```
+int getSpeed()
+{
+  switch() {
+    case !isTransport():
+      return getManSpeed();
+    case isCar:
+      return getCarSpeed();
+    case isPlane:
+      return getPlanesAverageSpeed();
+    case isBoat:
+      return getBoatSpeed();
+  }
+}
+
+int getPlanesAverageSpeed() {
+  int result = 0;
+
+  foreach (PlaneType plane in m_planes)
+  {
+    // @TODO clarify if we really can sum speeds of different planes
+    result += getPlaneSpeed(plane);
+  }
+
+  return result / m_planes.Length;
+}
 ```

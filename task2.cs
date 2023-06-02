@@ -1,30 +1,37 @@
-enum TransportType {
-  eCar,
-  ePlane,
-  eSubmarine
-};
-
-class Transport {
-  public:
-    Transport(TransportType type) : m_type (type) {}
-
-    int GetSpeed(int distance, int time) {
-    if (time != 0) {
-      switch(m_type) {
-        case eCar:
-          return distance/time;
-        case ePlane:
-          return distance/(time - getTakeOffTime() - getLandingTime());
-        case eSubmarine:
-          return distance/(time - getDiveTime() - getAscentTime());
+int getSpeed()
+{
+  int result = 0;
+  if (isTransport())
+  {
+    if(isCar)
+    {
+      result = getCarSpeed();
+    }
+    else
+    {
+      if(isPlane)
+      {
+        for (int i = 0; i < m_planes.Length; i++)
+        {
+          result += getPlaneSpeed(m_planes[i]);
+        }
+        if (m_planes.Length > 0)
+        {
+          result = result / m_planes.Length;
+        }
+      }
+      else
+      {
+        if(isBoat)
+        {
+          result = getBoatSpeed();
         }
       }
     }
-  ...
-  private:
-    int m_takeOffTime;
-    int m_landingTime;
-    int m_diveTime;
-    int m_ascentTime;
-    enum m_type;
-};
+  }
+  else
+  {
+    result = getManSpeed();
+  }
+  return result;
+}
