@@ -1,7 +1,9 @@
 int getSpeed()
 {
+  bool isTransport = isTransport();
+
   switch() {
-    case !isTransport():
+    case !isTransport:
       return getManSpeed();
     case isCar:
       return getCarSpeed();
@@ -17,9 +19,9 @@ int getPlanesAverageSpeed() {
 
   foreach (PlaneType plane in m_planes)
   {
-    // @TODO clarify if we really can sum speeds of different planes
     result += getPlaneSpeed(plane);
   }
 
+  // @TODO check float type
   return result / m_planes.Length;
 }
